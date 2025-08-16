@@ -1,5 +1,5 @@
 import './App.module.css';
-import urlfetch from '../../services/movieService.ts';
+import fetchMovies from '../../services/movieService.ts';
 import SearchBar from '../SearchBar/SearchBar.tsx';
 import MovieGrid from '../MovieGrid/MovieGrid.tsx';
 import MovieModal from '../MovieModal/MovieModal.tsx';
@@ -10,13 +10,17 @@ import toast, { Toaster } from 'react-hot-toast';
 import type { Movie } from '../../types/movie.ts';
 
 function App() {
-  const [movie, setMovie] = useState([]);
+  const [movies, setMovie] = useState<Movie[]>([]);
   const [isLoading, setLoad] = useState(false);
   const [isError, setError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+    setSelectedMovie(null);
+    setIsModalOpen(false);
+  };
+
   const modalOpener = (movieItem: Movie) => {
     setSelectedMovie(movieItem);
     openModal();
@@ -27,11 +31,11 @@ function App() {
       setLoad(true);
       setError(false);
 
-      const newMovieList = await urlfetch(searchedWord);
+      const newMovieList = await fetchMovies(searchedWord);
       console.log(newMovieList);
-      setMovie(newMovieList.data.results);
-      console.log(movie);
-      if (newMovieList.data.results.length === 0) {
+      setMovie(newMovieList);
+      console.log(movies);
+      if (newMovieList.length === 0) {
         toast.error('No movies found for your request.');
         return;
       }
@@ -43,10 +47,12 @@ function App() {
   };
   return (
     <>
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar onSubmit={handleSearch} />
       {isLoading && <Loader />}
       {isError && <ErrorMessage />}
-      {movie.length > 0 && <MovieGrid movies={movie} onSelect={modalOpener} />}
+      {movies.length > 0 && (
+        <MovieGrid movies={movies} onSelect={modalOpener} />
+      )}
       {isModalOpen && selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={closeModal} />
       )}
